@@ -12,7 +12,6 @@ import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Environment;
-import master.flame.danmaku.danmaku.util.SystemClock;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -25,6 +24,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.PopupWindow;
 import android.widget.VideoView;
+
+import com.sample.filter.KeywordFilter;
+import com.sample.filter.RegexFilter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,6 +52,7 @@ import master.flame.danmaku.danmaku.model.android.SpannedCacheStuffer;
 import master.flame.danmaku.danmaku.parser.BaseDanmakuParser;
 import master.flame.danmaku.danmaku.parser.IDataSource;
 import master.flame.danmaku.danmaku.util.IOUtils;
+import master.flame.danmaku.danmaku.util.SystemClock;
 
 public class MainActivity extends Activity implements View.OnClickListener {
 
@@ -75,6 +78,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     private Button mBtnSendDanmakuTextAndImage;
 
+    private Button mBtnRegex;
+    private Button mBtnRegexCancel;
+
+    private KeywordFilter keywordFilter = KeywordFilter.getInstance();
+    private RegexFilter regexFilter = RegexFilter.getInstance();
+
     private Button mBtnSendDanmakus;
     private DanmakuContext mContext;
     private BaseCacheStuffer.Proxy mCacheStufferAdapter = new BaseCacheStuffer.Proxy() {
@@ -92,7 +101,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
                         String url = "http://www.bilibili.com/favicon.ico";
                         InputStream inputStream = null;
                         Drawable drawable = mDrawable;
-                        if(drawable == null) {
+                        if (drawable == null) {
                             try {
                                 URLConnection urlConnection = new URL(url).openConnection();
                                 inputStream = urlConnection.getInputStream();
@@ -110,7 +119,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
                             drawable.setBounds(0, 0, 100, 100);
                             SpannableStringBuilder spannable = createSpannable(drawable);
                             danmaku.text = spannable;
-                            if(mDanmakuView != null) {
+                            if (mDanmakuView != null) {
                                 mDanmakuView.invalidateDanmaku(danmaku, false);
                             }
                             return;
@@ -195,6 +204,9 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mBtnSendDanmaku = (Button) findViewById(R.id.btn_send);
         mBtnSendDanmakuTextAndImage = (Button) findViewById(R.id.btn_send_image_text);
         mBtnSendDanmakus = (Button) findViewById(R.id.btn_send_danmakus);
+        mBtnRegex = (Button) findViewById(R.id.btn_regex);
+        mBtnRegexCancel = (Button) findViewById(R.id.btn_regex_cancel);
+
         mBtnRotate.setOnClickListener(this);
         mBtnHideDanmaku.setOnClickListener(this);
         mMediaController.setOnClickListener(this);
@@ -204,6 +216,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mBtnSendDanmaku.setOnClickListener(this);
         mBtnSendDanmakuTextAndImage.setOnClickListener(this);
         mBtnSendDanmakus.setOnClickListener(this);
+        mBtnRegex.setOnClickListener(this);
+        mBtnRegexCancel.setOnClickListener(this);
 
         // VideoView
         VideoView mVideoView = (VideoView) findViewById(R.id.videoview);
@@ -222,8 +236,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
         mContext.setDanmakuStyle(IDisplayer.DANMAKU_STYLE_STROKEN, 3).setDuplicateMergingEnabled(false).setScrollSpeedFactor(1.2f).setScaleTextSize(1.2f)
         .setCacheStuffer(new SpannedCacheStuffer(), mCacheStufferAdapter) // 图文混排使用SpannedCacheStuffer
 //        .setCacheStuffer(new BackgroundCacheStuffer())  // 绘制背景使用BackgroundCacheStuffer
-        .setMaximumLines(maxLinesPair)
-        .preventOverlapping(overlappingEnablePair).setDanmakuMargin(40);
+                .setMaximumLines(maxLinesPair)
+                .preventOverlapping(overlappingEnablePair).setDanmakuMargin(40);
+
+        //添加关键字过滤器
+        mContext.registerFilter(keywordFilter);
+        //添加正则过滤器
+        mContext.registerFilter(regexFilter);
+
         if (mDanmakuView != null) {
             mParser = createParser(this.getResources().openRawResource(R.raw.comments));
             mDanmakuView.setCallback(new master.flame.danmaku.controller.DrawHandler.Callback() {
@@ -349,9 +369,22 @@ public class MainActivity extends Activity implements View.OnClickListener {
         } else if (v == mBtnResumeDanmaku) {
             mDanmakuView.resume();
         } else if (v == mBtnSendDanmaku) {
-            addDanmaku(false);
+            keywordFilter.addKeyword("周目");
+            //不修改内部代码的情况下，通过这里刷新过滤
+            mContext.setUserHashBlackList();
+            //addDanmaku(false);
         } else if (v == mBtnSendDanmakuTextAndImage) {
-            addDanmaKuShowTextAndImage(false);
+            keywordFilter.removeKeyword("周目");
+            mContext.setUserHashBlackList();
+            //addDanmaKuShowTextAndImage(false);
+        } else if (v == mBtnRegex) {
+            regexFilter.addRegex("\\d");
+            mContext.setUserHashBlackList();
+            //addDanmaku(false);
+        } else if (v == mBtnRegexCancel) {
+            regexFilter.removeRegex("\\d");
+            mContext.setUserHashBlackList();
+            //addDanmaKuShowTextAndImage(false);
         } else if (v == mBtnSendDanmakus) {
             Boolean b = (Boolean) mBtnSendDanmakus.getTag();
             timer.cancel();
