@@ -21,10 +21,3 @@ android {
         jni.srcDirs = [] // This prevents the auto generation of Android.mk
     }
 }
-
-if (rootProject.file('gradle/gradle-mvn-push.gradle').exists()) {
-    apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
-}
-if (rootProject.file('gradle/gradle-bintray-upload.gradle').exists()) {
-    apply from: rootProject.file('gradle/gradle-bintray-upload.gradle')
-}
