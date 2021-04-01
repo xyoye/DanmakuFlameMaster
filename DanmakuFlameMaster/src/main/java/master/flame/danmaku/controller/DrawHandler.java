@@ -553,8 +553,10 @@ public class DrawHandler extends Handler {
     }
 
     private void initRenderingConfigs() {
-        long averageFrameConsumingTime
-                = FrameHelper.getFrameConsumingTime(mDanmakuView.getContext());
+        //仅在根据Choreographer绘制时更新绘制时长
+        long averageFrameConsumingTime = mContext.updateMethod == 0
+                ? FrameHelper.getFrameConsumingTime(mDanmakuView.getContext())
+                : 16;
         mCordonTime = Math.max(33, (long) (averageFrameConsumingTime * 2.5f));
         mCordonTime2 = (long) (mCordonTime * 2.5f);
         mFrameUpdateRate = Math.max(averageFrameConsumingTime, averageFrameConsumingTime / 15 * 15);
